@@ -1,0 +1,95 @@
+# Runs the live bot on GitHub's servers and publishes its site on GitHub Pages.
+#   every 10 min, 13:00-01:50 UTC  -> one live cycle (covers 10 a.m.-4 p.m. in every US time zone)
+#   12:40 UTC daily                 -> refresh history and settled markets; Mondays also re-run the backtest
+#   first push (no trained models)  -> full setup
+name: Live bot
+
+on:
+  push:
+    branches: [main]
+    paths-ignore: ["data/**", "results/**", "README.md"]
+  schedule:
+    - cron: "*/10 13-23 * * *"
+    - cron: "*/10 0-1 * * *"
+    - cron: "40 12 * * *"
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "run = one live cycle; update = refresh data; backtest = re-score and retrain; setup = first-time setup"
+        type: choice
+        options: [run, update, backtest, setup]
+        default: run
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: live-bot
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 330
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - run: pip install -r requirements.txt
+
+      - id: pages
+        uses: actions/configure-pages@v5
+
+      - name: Run the bot
+        env:
+          MODE: ${{ github.event.inputs.mode || (github.event.schedule == '40 12 * * *' && 'update') || 'run' }}
+          SITE_URL: ${{ steps.pages.outputs.base_url }}
+          SITE_DOMAIN: ${{ vars.SITE_DOMAIN }}
+          # Real orders stay off unless you set the LIVE_TRADING variable and both secrets.
+          LIVE_TRADING: ${{ vars.LIVE_TRADING }}
+          KALSHI_ENV: ${{ vars.KALSHI_ENV }}
+          KALSHI_API_KEY_ID: ${{ secrets.KALSHI_API_KEY_ID }}
+          KALSHI_PRIVATE_KEY: ${{ secrets.KALSHI_PRIVATE_KEY }}
+        run: |
+          if [ "$MODE" = "setup" ] || [ ! -f results/models.pkl ]; then
+            python live.py setup
+          elif [ "$MODE" = "backtest" ]; then
+            python live.py backtest && python live.py run
+          elif [ "$MODE" = "update" ]; then
+            python live.py update
+            if [ "$(date -u +%u)" = "1" ]; then python live.py backtest; fi
+            python live.py run
+          else
+            python live.py run
+          fi
+
+      - name: Save data back to the repo
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data results
+          if ! git diff --cached --quiet; then
+            git commit -m "Live data $(date -u +%Y-%m-%dT%H:%MZ)"
+            git pull --rebase origin main
+            git push
+          fi
+
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

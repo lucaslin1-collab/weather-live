@@ -1,0 +1,6 @@
+requests>=2.31
+pandas>=2.1
+numpy>=1.26
+scipy>=1.11
+scikit-learn>=1.3
+cryptography>=42   # only used if you switch on real orders
