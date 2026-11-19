@@ -68,6 +68,8 @@ jobs:
             python live.py backtest --if-stale || true
             python live.py run
           else
+            # While history is incomplete, each 10-minute run also backfills a slice
+            if python live.py needs-backfill; then python live.py update || true; fi
             python live.py run
           fi
 

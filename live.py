@@ -207,6 +207,21 @@ def backtest_is_stale(cities):
     return bool(ready - set(s.get("cities", {})))
 
 
+def cmd_needs_backfill(args):
+    """Exit 0 if any city still lacks history or has markets waiting for prices."""
+    from cities import load_cities
+    from store import load
+    for s in load_cities():
+        if any(load(k, s).empty for k in ("hourly_fc", "obs", "cli", "markets")):
+            print(f"{s}: history incomplete")
+            raise SystemExit(0)
+        mk = load("markets", s)
+        if "quote_tried" not in mk or (mk["quote_tried"].fillna(0) == 0).any():
+            print(f"{s}: prices incomplete")
+            raise SystemExit(0)
+    raise SystemExit(1)
+
+
 def cmd_backtest(args):
     from cities import load_cities
     import backtest_live
@@ -253,7 +268,7 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
     for name, fn in [("setup", cmd_setup), ("update", cmd_update), ("backtest", cmd_backtest),
-                     ("run", cmd_run), ("demo", cmd_demo)]:
+                     ("run", cmd_run), ("demo", cmd_demo), ("needs-backfill", cmd_needs_backfill)]:
         p = sub.add_parser(name)
         p.set_defaults(fn=fn)
         if name == "backtest":
