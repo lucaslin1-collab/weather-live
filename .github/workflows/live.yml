@@ -1,4 +1,4 @@
-# Runs the live bot on GitHub's servers and publishes its site on GitHub Pages.
+# Runs the live bot on GitHub's servers and publishes its site on GitHub Pages (Settings > Pages > Source: GitHub Actions).
 #   every 10 min, 13:00-01:50 UTC  -> one live cycle (covers 10 a.m.-4 p.m. in every US time zone)
 #   12:40 UTC daily                 -> refresh history and settled markets; Mondays also re-run the backtest
 #   first push (no trained models)  -> full setup
