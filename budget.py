@@ -11,5 +11,9 @@ def minutes_used():
 
 
 def out_of_time(reserve_min=0):
-    """True once the run has used its budget (minus a reserve for later steps)."""
-    return bool(config.TIME_BUDGET_MIN) and minutes_used() > config.TIME_BUDGET_MIN - reserve_min
+    """True once the run has used its budget, minus a reserve for later steps. The reserve
+    is capped at 30% of the budget so short runs still get work done."""
+    if not config.TIME_BUDGET_MIN:
+        return False
+    reserve = min(reserve_min, 0.3 * config.TIME_BUDGET_MIN)
+    return minutes_used() > config.TIME_BUDGET_MIN - reserve
