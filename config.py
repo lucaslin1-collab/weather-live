@@ -71,6 +71,10 @@ REAL_ONLY_PROVEN_CITIES = True  # real orders only in cities whose backtest show
 MAX_ORDER_DOLLARS = 10.0        # cap per order
 MAX_DAILY_DOLLARS = 50.0        # cap on total cost of real orders per day
 
+# --- Run time budget: long downloads stop after this many minutes so the run can save
+# its progress; the next run continues. Unset = no limit (local runs).
+TIME_BUDGET_MIN = float(os.environ.get("TIME_BUDGET_MIN", "0") or 0)
+
 # --- Backtest --------------------------------------------------------------------------
 MIN_TRAIN_DAYS = 120
 MIN_BLEND_DAYS = 30

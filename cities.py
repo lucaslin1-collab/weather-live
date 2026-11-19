@@ -67,6 +67,12 @@ def discover(client):
             pass
         if "temperature" not in (s.get("title", "") + " ".join(texts)).lower():
             continue
+        try:  # skip retired series: no open market right now
+            if not client.get("/markets", series_ticker=ticker, status="open", limit=1).get("markets"):
+                print(f"  {ticker}: no open markets; skipped")
+                continue
+        except Exception:  # noqa: BLE001
+            pass
         builtin = config.BUILTIN_CITIES.get(ticker)
         station = parse_station(texts) or (builtin[1] if builtin else None)
         if station is None:
@@ -83,6 +89,12 @@ def discover(client):
             except Exception as err:  # noqa: BLE001
                 print(f"  {ticker}: no coordinates for {station} ({err}); skipped")
                 continue
+        dup = next((k for k, v in cities.items() if v["station"] == station), None)
+        if dup and dup in config.BUILTIN_CITIES:
+            print(f"  {ticker}: same station as {dup}; skipped")
+            continue
+        if dup:
+            del cities[dup]
         cities[ticker] = _entry(ticker, city, station, lat, lon, tz, fee, s.get("title", ""))
     if not cities:
         print("  Discovery found nothing; using the built-in city table.")

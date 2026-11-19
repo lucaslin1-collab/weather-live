@@ -48,7 +48,9 @@ jobs:
 
       - name: Run the bot
         env:
-          MODE: ${{ github.event.inputs.mode || (github.event.schedule == '40 12 * * *' && 'update') || 'run' }}
+          MODE: ${{ github.event.inputs.mode || (github.event_name == 'push' && 'update') || (github.event.schedule == '40 12 * * *' && 'update') || 'run' }}
+          PYTHONUNBUFFERED: "1"
+          TIME_BUDGET_MIN: ${{ (github.event_name == 'schedule' && github.event.schedule != '40 12 * * *') && '8' || '240' }}
           SITE_URL: ${{ steps.pages.outputs.base_url }}
           SITE_DOMAIN: ${{ vars.SITE_DOMAIN }}
           # Real orders stay off unless you set the LIVE_TRADING variable and both secrets.
@@ -63,7 +65,7 @@ jobs:
             python live.py backtest && python live.py run
           elif [ "$MODE" = "update" ]; then
             python live.py update
-            if [ "$(date -u +%u)" = "1" ]; then python live.py backtest; fi
+            python live.py backtest --if-stale || true
             python live.py run
           else
             python live.py run

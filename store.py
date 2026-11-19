@@ -11,6 +11,7 @@ import requests
 
 import config
 from kalshi_client import dollars, to_unix
+from budget import out_of_time
 from obs import fetch_history
 
 SUPPORTED = {"between", "less", "less_or_equal", "greater", "greater_or_equal"}
@@ -59,20 +60,29 @@ def market_row(m, series, fee_mult):
     }
 
 
-def _get_json(url, params, tries=5):
+def _get_json(url, params, tries=6):
+    """GET with retries on rate limits, server errors and timeouts (the forecast archive
+    can be slow)."""
+    last_err = None
     for attempt in range(tries):
-        resp = requests.get(url, params=params, timeout=90)
+        try:
+            resp = requests.get(url, params=params, timeout=180)
+        except (requests.Timeout, requests.ConnectionError) as err:
+            last_err = err
+            time.sleep(10 * (attempt + 1))
+            continue
         if resp.status_code == 429 or resp.status_code >= 500:
-            time.sleep(5 * (attempt + 1))
+            last_err = requests.HTTPError(f"HTTP {resp.status_code}")
+            time.sleep(10 * (attempt + 1))
             continue
         resp.raise_for_status()
         return resp.json()
-    resp.raise_for_status()
+    raise last_err
 
 
 # --- hourly forecasts (ensemble mean of the models, as issued a day earlier) -------------
 
-def fetch_hourly_forecast(city, start, end, chunk_days=120):
+def fetch_hourly_forecast(city, start, end, chunk_days=45):
     frames = []
     last = pd.Timestamp(end) + pd.Timedelta(days=1)
     for cs in pd.date_range(start, last, freq=f"{chunk_days}D"):
@@ -143,13 +153,37 @@ def update_markets(client, cities, history_days=None):
         rows = [r for r in (market_row(m, series, city["fee_multiplier"]) for m in raw) if r]
         known = set(old["ticker"]) if not old.empty else set()
         rows = [r for r in rows if r["date"] >= since and r["result"] is not None and r["ticker"] not in known]
-        print(f"  {series}: {len(rows)} new settled markets")
-        if not rows:
+        retry = pd.DataFrame()
+        if not old.empty:   # markets saved earlier without any price get one more try
+            q = load("quotes", series)
+            priced = set(q.loc[q["yes_bid"].notna(), "ticker"]) if not q.empty else set()
+            tried = old["quote_tried"] if "quote_tried" in old else pd.Series(0, index=old.index)
+            retry = old[~old["ticker"].isin(priced) & (tried.fillna(0) == 0)]
+        print(f"  {series}: {len(rows)} new settled markets" + (f", re-pricing {len(retry)}" if len(retry) else ""))
+        if not rows and retry.empty:
             continue
-        new = pd.DataFrame(rows).drop(columns=["yes_bid", "yes_ask"])
+        if out_of_time(reserve_min=25):
+            print("    time budget reached; continuing next run")
+            break
+        new = pd.concat([pd.DataFrame(rows).drop(columns=["yes_bid", "yes_ask"], errors="ignore"),
+                         retry.drop(columns=["quote_tried"], errors="ignore")], ignore_index=True)
         quotes = hourly_quotes(client, new, city, cutoff)
-        _upsert("quotes", series, quotes, ["ticker", "hour"], None) if not quotes.empty else None
+        if not quotes.empty:
+            _upsert("quotes", series, quotes, ["ticker", "hour"], None)
+        done = set(quotes["ticker"]) if not quotes.empty else set()
+        new["quote_tried"] = new["ticker"].isin(done).astype(int)
         _upsert("markets", series, new, "ticker", ["date"])
+
+
+def close_price(q):
+    """Closing price in dollars. Live candles use `close_dollars`; archived candles use
+    `close` (also dollars). Older formats gave whole cents."""
+    q = q or {}
+    v = q.get("close_dollars", q.get("close"))
+    if v is None or v == "":
+        return None
+    v = float(v)
+    return v / 100 if v > 1 else v
 
 
 def hourly_quotes(client, mk, city, cutoff_ts):
@@ -161,10 +195,12 @@ def hourly_quotes(client, mk, city, cutoff_ts):
         if not usable:
             return None, None
         last = max(usable, key=lambda c: c["end_period_ts"])
-        return (dollars((last.get("yes_bid") or {}).get("close_dollars")),
-                dollars((last.get("yes_ask") or {}).get("close_dollars")))
+        return close_price(last.get("yes_bid")), close_price(last.get("yes_ask"))
 
     for date, day in mk.groupby("date"):
+        if out_of_time(reserve_min=25):
+            print("    time budget reached; remaining prices continue next run")
+            break
         hours = {h: int(local_to_utc(date, h, city["tz"]).timestamp()) for h in config.DECISION_HOURS}
         start, end = min(hours.values()) - 2 * 3600, max(hours.values())
         archived = cutoff_ts is not None and day["settled_ts"].fillna(0).max() < cutoff_ts

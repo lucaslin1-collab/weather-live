@@ -179,8 +179,12 @@ def cmd_update(args, client=None, cities=None):
     import store
     client = client or KalshiPublic()
     cities = cities or load_cities()
+    from budget import out_of_time
     print("Updating forecasts, observations and official highs ...")
     for n, (s, c) in enumerate(cities.items(), 1):
+        if out_of_time(reserve_min=70):
+            print("  time budget reached; remaining cities continue next run")
+            break
         try:
             store.update_weather(c)
             print(f"  [{n}/{len(cities)}] {c['city']}")
@@ -190,10 +194,27 @@ def cmd_update(args, client=None, cities=None):
     store.update_markets(client, cities)
 
 
+def backtest_is_stale(cities):
+    """Re-run when the backtest is a week old or misses cities that now have data."""
+    from store import load
+    path = os.path.join(config.RESULTS_DIR, "backtest.json")
+    if not os.path.exists(path):
+        return True
+    s = json.load(open(path))
+    if pd.Timestamp.now() - pd.Timestamp(s.get("generated", "2000-01-01")) > pd.Timedelta(days=6):
+        return True
+    ready = {c for c in cities if not load("hourly_fc", c).empty and not load("quotes", c).empty}
+    return bool(ready - set(s.get("cities", {})))
+
+
 def cmd_backtest(args):
     from cities import load_cities
     import backtest_live
-    backtest_live.run(load_cities())
+    cities = load_cities()
+    if getattr(args, "if_stale", False) and not backtest_is_stale(cities):
+        print("Backtest is up to date.")
+        raise SystemExit(10)
+    backtest_live.run(cities)
 
 
 def cmd_run(args, client=None, cities=None):
@@ -233,7 +254,10 @@ def main():
     sub = ap.add_subparsers(dest="cmd", required=True)
     for name, fn in [("setup", cmd_setup), ("update", cmd_update), ("backtest", cmd_backtest),
                      ("run", cmd_run), ("demo", cmd_demo)]:
-        sub.add_parser(name).set_defaults(fn=fn)
+        p = sub.add_parser(name)
+        p.set_defaults(fn=fn)
+        if name == "backtest":
+            p.add_argument("--if-stale", action="store_true", help="only run if a week old or cities were added")
     args = ap.parse_args()
     args.fn(args)
 

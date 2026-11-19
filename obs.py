@@ -64,13 +64,20 @@ def fetch_history(station, start, end):
                       "latlon": "no", "missing": "M", "report_type": "3,4",
                       "year1": s.year, "month1": s.month, "day1": s.day,   # end date is exclusive
                       "year2": e1.year, "month2": e1.month, "day2": e1.day}
-            for attempt in range(4):
-                resp = requests.get(IEM_ASOS, params=params, headers=UA, timeout=120)
-                if resp.status_code in (429, 503):
-                    time.sleep(10 * (attempt + 1))
+            resp = None
+            for attempt in range(5):
+                try:
+                    resp = requests.get(IEM_ASOS, params=params, headers=UA, timeout=180)
+                except (requests.Timeout, requests.ConnectionError):
+                    time.sleep(15 * (attempt + 1))
+                    continue
+                if resp.status_code in (429, 502, 503, 504):
+                    time.sleep(15 * (attempt + 1))
                     continue
                 resp.raise_for_status()
                 break
+            if resp is None or resp.status_code != 200:
+                raise RuntimeError(f"IEM observations unavailable for {sid}")
             df = pd.read_csv(io.StringIO(resp.text), na_values=["M"])
             if len(df):
                 break
