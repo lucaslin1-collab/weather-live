@@ -1,0 +1,149 @@
+{
+  "generated": "2026-11-19T22:15",
+  "period": [
+    "2026-06-22",
+    "2026-11-18"
+  ],
+  "overall": {
+    "markets": 5172,
+    "days": 300,
+    "bss_model": -0.6286738343821621,
+    "bss_blend": 0.0036563659199487786,
+    "trades": 3,
+    "win_rate": 0.6666666666666666,
+    "pnl": 0.1299999999999999,
+    "pnl_per_trade": 0.0433333333333333,
+    "ci90": [
+      -1.1900000000000002,
+      1.45
+    ],
+    "verdict": "unproven"
+  },
+  "cities": {
+    "KXHIGHAUS": {
+      "markets": 2583,
+      "days": 150,
+      "bss_model": -0.49362102929493634,
+      "bss_blend": -0.000114866150370041,
+      "trades": 1,
+      "win_rate": 1.0,
+      "pnl": 0.53,
+      "pnl_per_trade": 0.53,
+      "ci90": [
+        0.53,
+        0.53
+      ],
+      "verdict": "unproven",
+      "city": "Austin"
+    },
+    "KXHIGHTBOS": {
+      "markets": 2589,
+      "days": 150,
+      "bss_model": -0.7948983949374382,
+      "bss_blend": 0.010311558623810502,
+      "trades": 2,
+      "win_rate": 0.5,
+      "pnl": -0.40000000000000013,
+      "pnl_per_trade": -0.20000000000000007,
+      "ci90": [
+        -1.58,
+        0.7799999999999998
+      ],
+      "verdict": "unproven",
+      "city": "Boston"
+    }
+  },
+  "hours": {
+    "10": {
+      "markets": 743,
+      "days": 300,
+      "bss_model": -0.515746547565501,
+      "bss_blend": 0.013177978920935751,
+      "trades": 1,
+      "win_rate": 1.0,
+      "pnl": 0.53,
+      "pnl_per_trade": 0.53,
+      "ci90": [
+        0.53,
+        0.53
+      ],
+      "verdict": "unproven"
+    },
+    "11": {
+      "markets": 744,
+      "days": 300,
+      "bss_model": -0.44125818417295837,
+      "bss_blend": 0.021095684893909006,
+      "trades": 0,
+      "verdict": "unproven"
+    },
+    "12": {
+      "markets": 742,
+      "days": 300,
+      "bss_model": -0.3837803822778858,
+      "bss_blend": 0.003657765978694605,
+      "trades": 1,
+      "win_rate": 1.0,
+      "pnl": 0.3899999999999999,
+      "pnl_per_trade": 0.3899999999999999,
+      "ci90": [
+        0.3899999999999999,
+        0.3899999999999999
+      ],
+      "verdict": "unproven"
+    },
+    "13": {
+      "markets": 738,
+      "days": 300,
+      "bss_model": -0.45722585750812694,
+      "bss_blend": -0.005067234635229845,
+      "trades": 1,
+      "win_rate": 0.0,
+      "pnl": -0.79,
+      "pnl_per_trade": -0.79,
+      "ci90": [
+        -0.79,
+        -0.79
+      ],
+      "verdict": "unproven"
+    },
+    "14": {
+      "markets": 731,
+      "days": 300,
+      "bss_model": -0.608201316897369,
+      "bss_blend": -0.017338353209957802,
+      "trades": 0,
+      "verdict": "unproven"
+    },
+    "15": {
+      "markets": 734,
+      "days": 300,
+      "bss_model": -1.1532720935403495,
+      "bss_blend": -0.030889236495459382,
+      "trades": 0,
+      "verdict": "unproven"
+    },
+    "16": {
+      "markets": 740,
+      "days": 300,
+      "bss_model": -2.7294476322712042,
+      "bss_blend": 0.2543634184957284,
+      "trades": 0,
+      "verdict": "unproven"
+    }
+  },
+  "equity": [
+    [
+      "2026-11-03",
+      0.53
+    ],
+    [
+      "2026-11-04",
+      -0.26
+    ],
+    [
+      "2026-11-08",
+      0.13
+    ]
+  ]
+}
