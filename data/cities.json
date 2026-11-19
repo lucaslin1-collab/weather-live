@@ -43,17 +43,6 @@
     "fee_multiplier": 1.0,
     "title": "Highest temperature in Chicago"
   },
-  "KXHIGHHOU": {
-    "series": "KXHIGHHOU",
-    "city": "Houston (Hobby)",
-    "station": "KHOU",
-    "lat": 29.6375,
-    "lon": -95.2825,
-    "tz": "America/Chicago",
-    "std_offset": -6.0,
-    "fee_multiplier": 1.0,
-    "title": "Highest temperature in Houston"
-  },
   "KXHIGHTHOU": {
     "series": "KXHIGHTHOU",
     "city": "Houston (Hobby)",
@@ -196,17 +185,6 @@
     "std_offset": -8.0,
     "fee_multiplier": 1.0,
     "title": "Highest temperature in Los Angeles"
-  },
-  "KXHIGHOU": {
-    "series": "KXHIGHOU",
-    "city": "Houston (Hobby)",
-    "station": "KHOU",
-    "lat": 29.6375,
-    "lon": -95.2825,
-    "tz": "America/Chicago",
-    "std_offset": -6.0,
-    "fee_multiplier": 1.0,
-    "title": "Highest temperature in Houston"
   },
   "KXHIGHAUS": {
     "series": "KXHIGHAUS",
