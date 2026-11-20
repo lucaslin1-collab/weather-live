@@ -121,19 +121,25 @@ def _upsert(kind, series, new, key, parse):
     return out
 
 
+def _needs_backfill(df, col):
+    """True if stored history doesn't reach back to WEATHER_START (e.g. only today's
+    forecast was saved by a live cycle)."""
+    return df.empty or df[col].min() > pd.Timestamp(config.WEATHER_START) + pd.Timedelta(days=30)
+
+
 def update_weather(city):
     """Hourly forecasts, observations and official highs, from the last stored day to today."""
     series, today = city["series"], local_today(city)
     fc_old = load("hourly_fc", series, parse_dates=["time"])
-    start = pd.Timestamp(config.WEATHER_START) if fc_old.empty else fc_old["time"].max().normalize() - pd.Timedelta(days=3)
+    start = pd.Timestamp(config.WEATHER_START) if _needs_backfill(fc_old, "time") else fc_old["time"].max().normalize() - pd.Timedelta(days=3)
     _upsert("hourly_fc", series, fetch_hourly_forecast(city, start, today), "time", ["time"])
 
     ob_old = load("obs", series, parse_dates=["time"])
-    ostart = pd.Timestamp(config.WEATHER_START) if ob_old.empty else ob_old["time"].max().normalize() - pd.Timedelta(days=2)
+    ostart = pd.Timestamp(config.WEATHER_START) if _needs_backfill(ob_old, "time") else ob_old["time"].max().normalize() - pd.Timedelta(days=2)
     _upsert("obs", series, fetch_history(city["station"], ostart, today), "time", ["time"])
 
     cli_old = load("cli", series, parse_dates=["date"])
-    cstart = pd.Timestamp(config.WEATHER_START) if cli_old.empty else cli_old["date"].max() - pd.Timedelta(days=5)
+    cstart = pd.Timestamp(config.WEATHER_START) if _needs_backfill(cli_old, "date") else cli_old["date"].max() - pd.Timedelta(days=5)
     _upsert("cli", series, fetch_cli(city["station"], range(cstart.year, today.year + 1)), "date", ["date"])
 
 

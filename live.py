@@ -211,8 +211,10 @@ def cmd_needs_backfill(args):
     """Exit 0 if any city still lacks history or has markets waiting for prices."""
     from cities import load_cities
     from store import load
+    from store import _needs_backfill
     for s in load_cities():
-        if any(load(k, s).empty for k in ("hourly_fc", "obs", "cli", "markets")):
+        if any(load(k, s).empty for k in ("hourly_fc", "obs", "cli", "markets")) or \
+                _needs_backfill(load("hourly_fc", s, parse_dates=["time"]), "time"):
             print(f"{s}: history incomplete")
             raise SystemExit(0)
         mk = load("markets", s)
