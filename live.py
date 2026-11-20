@@ -217,8 +217,10 @@ def cmd_needs_backfill(args):
                 _needs_backfill(load("hourly_fc", s, parse_dates=["time"]), "time"):
             print(f"{s}: history incomplete")
             raise SystemExit(0)
-        mk = load("markets", s)
-        if "quote_tried" not in mk or (mk["quote_tried"].fillna(0) == 0).any():
+        mk, q = load("markets", s), load("quotes", s)
+        priced = set(q.loc[q["yes_bid"].notna(), "ticker"]) if not q.empty else set()
+        tried = mk["quote_tried"].fillna(0) if "quote_tried" in mk else pd.Series(0, index=mk.index)
+        if (~mk["ticker"].isin(priced) & (tried == 0)).any():   # same rule as store.update_markets
             print(f"{s}: prices incomplete")
             raise SystemExit(0)
     raise SystemExit(1)
