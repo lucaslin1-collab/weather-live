@@ -4,6 +4,7 @@
 #   first push (no trained models)  -> full setup
 name: Live bot
 
+# GitHub runs scheduled jobs on a best-effort basis: they can start minutes to hours late.
 on:
   push:
     branches: [main]
