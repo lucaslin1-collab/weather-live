@@ -1,1 +1,2 @@
 date,series,city,ticker,label,side,price,contracts,prob,ev,hour,opened_at,fee_mult,verdict,won,pnl
+2026-11-20 00:00:00,KXHIGHDEN,Denver,KXHIGHDEN-26NOV20-T64,≥65°,YES,0.66,30,0.7214663266348109,0.04146632663481088,14,2026-11-20T21:02,1.0,unproven,,
