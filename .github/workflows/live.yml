@@ -9,10 +9,8 @@ on:
   push:
     branches: [main]
     paths-ignore: ["data/**", "results/**", "README.md"]
-  schedule:
-    - cron: "*/10 13-23 * * *"
-    - cron: "*/10 0-1 * * *"
-    - cron: "40 12 * * *"
+  # Started on time by cron-job.org (GitHub's own schedule ran late):
+  #   7:40 a.m. Eastern mode=update  |  every 10 min 8:00 a.m.-8:50 p.m. Eastern mode=run
   workflow_dispatch:
     inputs:
       mode:
