@@ -146,9 +146,12 @@ def by_city_table(summary):
 def record_body(state, notice=""):
     pos = state["positions"]
     settled = pos[pos["won"].notna()] if len(pos) else pos
-    out = ['<header class="top"><h1>Track record</h1><p class="lede">Every paper position at the price the bot '
-           'paid, held to settlement. Profit uses the bot’s actual position sizes from a '
-           f'{money(config.PAPER_BANKROLL)} paper bankroll.</p></header>', notice, '<section>']
+    out = ['<header class="top"><h1>Track record</h1><p class="lede">Two different things live on this page: '
+           'the bot’s own paper trades since it went live, and a backtest that replays past days to estimate '
+           'how it would have done. Only the first is trades it actually made. No real money is involved in '
+           'either.</p></header>', notice,
+           '<section><h2>Paper trades since going live</h2><p class="fine">Every paper position at the price the '
+           f'bot paid, held to settlement, sized from a {money(config.PAPER_BANKROLL)} paper bankroll.</p>']
     if len(settled):
         out.append(f'<p class="stats"><span><b>{len(settled)}</b> positions settled</span>'
                    f'<span><b>{pct(settled["won"].mean())}</b> won</span>'
@@ -159,7 +162,22 @@ def record_body(state, notice=""):
         out.append('<div class="sec-head"><h3>Cumulative paper profit</h3></div>' + equity_chart(series))
     else:
         out.append('<p class="stats"><span>No positions have settled yet.</span></p>')
-    out.append(by_hour_table(state["summary"]) + by_city_table(state["summary"]) + '</section>')
+    out.append('</section>')
+    sm = state["summary"]
+    if sm:
+        o = sm.get("overall", {})
+        ci = o.get("ci90")
+        intro = (f'<p class="fine">Not trades the bot made: a simulation that replays {sm["period"][0]} to '
+                 f'{sm["period"][1]} as if it had been trading then, with $1 contracts and Kalshi’s fees. Over that '
+                 f'stretch it would have placed {o.get("trades", 0)} bets for {money(o.get("pnl", 0.0))}'
+                 + (f' (90% range {money(ci[0])} to {money(ci[1])})' if ci else "") + '. '
+                 + ('A loss here means this approach hasn’t beaten the market on past days, which is why the '
+                    'bot only paper trades.' if o.get("pnl", 0.0) < 0 else
+                    'Past results still need live paper trades to confirm them.') + '</p>')
+    else:
+        intro = ""
+    out.append('<section><h2>Backtest: how it would have done on past days</h2>' + intro
+               + by_hour_table(sm) + by_city_table(sm) + '</section>')
     if len(pos):
         rows = []
         for r in pos.sort_values(["date", "opened_at"], ascending=False).head(80).itertuples():
