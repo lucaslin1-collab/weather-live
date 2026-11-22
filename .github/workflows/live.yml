@@ -53,7 +53,7 @@ jobs:
         env:
           MODE: ${{ github.event.inputs.mode || (github.event_name == 'push' && 'update') || (github.event.schedule == '40 12 * * *' && 'update') || 'run' }}
           PYTHONUNBUFFERED: "1"
-          TIME_BUDGET_MIN: ${{ (github.event_name == 'schedule' && github.event.schedule != '40 12 * * *') && '8' || '240' }}
+          TIME_BUDGET_MIN: ${{ (github.event.inputs.mode == 'run' || (github.event_name == 'schedule' && github.event.schedule != '40 12 * * *')) && '8' || '240' }}
           SITE_URL: ${{ steps.pages.outputs.base_url }}
           SITE_DOMAIN: ${{ vars.SITE_DOMAIN }}
           # Real orders stay off unless you set the LIVE_TRADING variable and both secrets.
