@@ -49,7 +49,9 @@ MARKET_HISTORY_DAYS = 150      # days of intraday Kalshi prices `setup` download
 # --- Signals (same rules as the forecast bot) -------------------------------------------
 EDGE_THRESHOLD = 0.04
 MAX_SPREAD = 0.10
-MIN_PRICE, MAX_PRICE = 0.04, 0.96
+# Max 75¢: in the backtest, live-bot bets on favorites above 75¢ lost money (75–85¢: −12¢ per $1,
+# 90% range −25¢ to −1¢); by the afternoon the market already knows what the station reads.
+MIN_PRICE, MAX_PRICE = 0.04, 0.75
 MAX_PICKS_PER_CITY = 2          # positions per city per day
 BASE_FEE_RATE = 0.07
 KELLY_FRACTION = 0.25
